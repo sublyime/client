@@ -11,6 +11,8 @@ function App() {
   const [receptors, setReceptors] = useState([]);
   const [currentPlume, setCurrentPlume] = useState(null);
   const [websocket, setWebsocket] = useState(null);
+  // eslint-disable-next-line no-unused-vars
+  const [clickedLocation, setClickedLocation] = useState(null);
 
   useEffect(() => {
     // Initialize WebSocket connection
@@ -44,7 +46,8 @@ function App() {
   };
 
   const handleMapClick = (lat, lng) => {
-    // This will be handled by the ControlPanel to create a new release
+    // Pass the clicked location to ControlPanel
+    setClickedLocation({ lat, lng });
     console.log('Map clicked at:', lat, lng);
   };
 
@@ -76,6 +79,8 @@ function App() {
             activeRelease={activeRelease}
             onReleaseSelect={setActiveRelease}
             releases={releases}
+            clickedLocation={clickedLocation}
+            setClickedLocation={setClickedLocation}
           />
           <ReceptorPanel 
             receptors={receptors}

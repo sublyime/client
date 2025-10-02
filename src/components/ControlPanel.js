@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const API_BASE = 'http://localhost:3001/api';
 
-function ControlPanel({ onReleaseCreated, activeRelease, onReleaseSelect, releases }) {
+function ControlPanel({ onReleaseCreated, activeRelease, onReleaseSelect, releases, clickedLocation, setClickedLocation }) {
   const [chemicals, setChemicals] = useState([]);
   const [weatherStations, setWeatherStations] = useState([]);
   const [showReleaseForm, setShowReleaseForm] = useState(false);
@@ -31,6 +31,19 @@ function ControlPanel({ onReleaseCreated, activeRelease, onReleaseSelect, releas
     fetchReleases();
   }, []);
 
+  // Handle clicked location from map
+  useEffect(() => {
+    if (clickedLocation) {
+      setReleaseForm(prev => ({
+        ...prev,
+        latitude: clickedLocation.lat.toString(),
+        longitude: clickedLocation.lng.toString()
+      }));
+      setShowReleaseForm(true);
+      setClickedLocation(null); // Clear the clicked location
+    }
+  }, [clickedLocation, setClickedLocation]);
+
   const fetchChemicals = async () => {
     try {
       const response = await axios.get(`${API_BASE}/chemicals`);
@@ -51,7 +64,7 @@ function ControlPanel({ onReleaseCreated, activeRelease, onReleaseSelect, releas
 
   const fetchReleases = async () => {
     try {
-      const response = await axios.get(`${API_BASE}/releases/active`);
+      await axios.get(`${API_BASE}/releases/active`);
       // Handle in parent component
     } catch (error) {
       console.error('Error fetching releases:', error);
@@ -64,15 +77,6 @@ function ControlPanel({ onReleaseCreated, activeRelease, onReleaseSelect, releas
       ...prev,
       [name]: value
     }));
-  };
-
-  const handleMapClick = (lat, lng) => {
-    setReleaseForm(prev => ({
-      ...prev,
-      latitude: lat.toString(),
-      longitude: lng.toString()
-    }));
-    setShowReleaseForm(true);
   };
 
   const handleSubmitRelease = async (e) => {

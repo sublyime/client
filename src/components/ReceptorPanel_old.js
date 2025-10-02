@@ -7,7 +7,6 @@ function ReceptorPanel({ receptors, setReceptors, activeRelease }) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [receptorImpacts, setReceptorImpacts] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   
   const [newReceptor, setNewReceptor] = useState({
     name: '',
@@ -19,14 +18,12 @@ function ReceptorPanel({ receptors, setReceptors, activeRelease }) {
     sensitivity_factor: '1.0'
   });
 
-  // Define functions with useCallback to prevent infinite re-renders
   const fetchReceptors = useCallback(async () => {
     try {
       const response = await axios.get(`${API_BASE}/receptors`);
       setReceptors(response.data);
     } catch (error) {
       console.error('Error fetching receptors:', error);
-      setError('Failed to fetch receptors');
     }
   }, [setReceptors]);
 
@@ -44,7 +41,6 @@ function ReceptorPanel({ receptors, setReceptors, activeRelease }) {
     }
   }, [activeRelease]);
 
-  // Effects using the defined functions
   useEffect(() => {
     fetchReceptors();
   }, [fetchReceptors]);
@@ -53,21 +49,10 @@ function ReceptorPanel({ receptors, setReceptors, activeRelease }) {
     if (activeRelease) {
       fetchReceptorImpacts();
     }
-  }, [fetchReceptorImpacts, activeRelease]);
+  }, [activeRelease, fetchReceptorImpacts]);
 
-  const handleFormChange = (e) => {
-    const { name, value } = e.target;
-    setNewReceptor(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSubmitReceptor = async (e) => {
+  const handleAddReceptor = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-
     try {
       const receptorData = {
         ...newReceptor,
@@ -79,7 +64,6 @@ function ReceptorPanel({ receptors, setReceptors, activeRelease }) {
       };
 
       const response = await axios.post(`${API_BASE}/receptors`, receptorData);
-      
       setReceptors(prev => [...prev, response.data]);
       setShowAddForm(false);
       setNewReceptor({
@@ -92,13 +76,11 @@ function ReceptorPanel({ receptors, setReceptors, activeRelease }) {
         sensitivity_factor: '1.0'
       });
     } catch (error) {
-      setError(error.response?.data?.error || 'Failed to add receptor');
-    } finally {
-      setLoading(false);
+      console.error('Error adding receptor:', error);
     }
   };
 
-  const getImpactForReceptor = (receptorId) => {
+  const getReceptorImpact = (receptorId) => {
     return receptorImpacts.find(impact => impact.receptor_id === receptorId);
   };
 
@@ -114,25 +96,20 @@ function ReceptorPanel({ receptors, setReceptors, activeRelease }) {
 
   return (
     <div className="panel">
-      <h3>Receptors</h3>
-      
-      {error && (
-        <div className="error-message">{error}</div>
-      )}
+      <h3>Receptors & Impacts</h3>
 
       {/* Add Receptor Form */}
       {showAddForm && (
-        <form onSubmit={handleSubmitReceptor} style={{ marginBottom: '1rem' }}>
-          <h4>Add New Receptor</h4>
+        <form onSubmit={handleAddReceptor} style={{ marginBottom: '1rem' }}>
+          <h4>Add Receptor</h4>
           
           <div className="form-group">
             <label>Name</label>
             <input
               type="text"
-              name="name"
               value={newReceptor.name}
-              onChange={handleFormChange}
-              placeholder="e.g., Downtown School"
+              onChange={(e) => setNewReceptor({...newReceptor, name: e.target.value})}
+              placeholder="School, Hospital, etc."
               required
             />
           </div>
@@ -143,9 +120,8 @@ function ReceptorPanel({ receptors, setReceptors, activeRelease }) {
               <input
                 type="number"
                 step="any"
-                name="latitude"
                 value={newReceptor.latitude}
-                onChange={handleFormChange}
+                onChange={(e) => setNewReceptor({...newReceptor, latitude: e.target.value})}
                 required
               />
             </div>
@@ -154,9 +130,8 @@ function ReceptorPanel({ receptors, setReceptors, activeRelease }) {
               <input
                 type="number"
                 step="any"
-                name="longitude"
                 value={newReceptor.longitude}
-                onChange={handleFormChange}
+                onChange={(e) => setNewReceptor({...newReceptor, longitude: e.target.value})}
                 required
               />
             </div>
@@ -165,17 +140,15 @@ function ReceptorPanel({ receptors, setReceptors, activeRelease }) {
           <div className="form-group">
             <label>Type</label>
             <select
-              name="receptor_type"
               value={newReceptor.receptor_type}
-              onChange={handleFormChange}
+              onChange={(e) => setNewReceptor({...newReceptor, receptor_type: e.target.value})}
             >
               <option value="residential">Residential</option>
               <option value="school">School</option>
               <option value="hospital">Hospital</option>
-              <option value="commercial">Commercial</option>
               <option value="industrial">Industrial</option>
-              <option value="park">Park/Recreation</option>
-              <option value="other">Other</option>
+              <option value="commercial">Commercial</option>
+              <option value="environmental">Environmental</option>
             </select>
           </div>
 
@@ -184,28 +157,24 @@ function ReceptorPanel({ receptors, setReceptors, activeRelease }) {
               <label>Population</label>
               <input
                 type="number"
-                name="population"
                 value={newReceptor.population}
-                onChange={handleFormChange}
+                onChange={(e) => setNewReceptor({...newReceptor, population: e.target.value})}
                 placeholder="Optional"
               />
             </div>
             <div className="form-group">
-              <label>Sensitivity Factor</label>
+              <label>Sensitivity</label>
               <input
                 type="number"
                 step="0.1"
-                name="sensitivity_factor"
                 value={newReceptor.sensitivity_factor}
-                onChange={handleFormChange}
+                onChange={(e) => setNewReceptor({...newReceptor, sensitivity_factor: e.target.value})}
               />
             </div>
           </div>
 
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? 'Adding...' : 'Add Receptor'}
-            </button>
+            <button type="submit" className="btn btn-primary">Add Receptor</button>
             <button 
               type="button" 
               className="btn btn-secondary"
@@ -219,49 +188,33 @@ function ReceptorPanel({ receptors, setReceptors, activeRelease }) {
 
       {/* Receptor List */}
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h4>Active Receptors ({receptors.length})</h4>
-          <button 
-            className="btn btn-secondary"
-            onClick={() => setShowAddForm(true)}
-          >
-            Add Receptor
-          </button>
-        </div>
-
-        {receptors.length === 0 ? (
-          <p style={{ color: '#6c757d', fontStyle: 'italic' }}>No receptors defined</p>
+        {loading ? (
+          <div className="loading">Loading impacts...</div>
         ) : (
           receptors.map(receptor => {
-            const impact = getImpactForReceptor(receptor.id);
+            const impact = getReceptorImpact(receptor.id);
             return (
               <div key={receptor.id} className="receptor-item">
                 <div className="receptor-info">
                   <h5>{receptor.name}</h5>
-                  <p><strong>Type:</strong> {receptor.receptor_type}</p>
-                  <p><strong>Location:</strong> {receptor.latitude.toFixed(4)}, {receptor.longitude.toFixed(4)}</p>
-                  {receptor.population && (
-                    <p><strong>Population:</strong> {receptor.population}</p>
-                  )}
+                  <p>{receptor.receptor_type}</p>
+                  <p>{receptor.latitude.toFixed(4)}, {receptor.longitude.toFixed(4)}</p>
+                  {receptor.population && <p>Pop: {receptor.population}</p>}
                 </div>
                 
                 {impact && (
                   <div className="concentration-display">
-                    <div className="concentration-value">
+                    <div 
+                      className="concentration-value"
+                      style={{ color: getRiskColor(impact.risk_level) }}
+                    >
                       {impact.concentration.toFixed(3)} mg/m³
                     </div>
-                    <div 
-                      style={{ 
-                        color: getRiskColor(impact.risk_level),
-                        fontWeight: 'bold',
-                        textTransform: 'uppercase',
-                        fontSize: '0.75rem'
-                      }}
-                    >
-                      {impact.risk_level} RISK
+                    <div style={{ fontSize: '0.7rem', textTransform: 'uppercase' }}>
+                      {impact.risk_level} Risk
                     </div>
                     {impact.arrival_time && (
-                      <div style={{ fontSize: '0.75rem', color: '#6c757d' }}>
+                      <div style={{ fontSize: '0.7rem' }}>
                         Arrival: {new Date(impact.arrival_time).toLocaleTimeString()}
                       </div>
                     )}
@@ -273,22 +226,28 @@ function ReceptorPanel({ receptors, setReceptors, activeRelease }) {
         )}
       </div>
 
+      {/* Add Receptor Button */}
+      <button 
+        className="btn btn-primary"
+        onClick={() => setShowAddForm(true)}
+        style={{ width: '100%', marginTop: '1rem' }}
+      >
+        Add Receptor
+      </button>
+
       {/* Impact Summary */}
       {activeRelease && receptorImpacts.length > 0 && (
         <div style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-          <h5 style={{ margin: '0 0 0.5rem 0' }}>Impact Summary</h5>
-          <div style={{ fontSize: '0.875rem' }}>
-            <div>Receptors affected: {receptorImpacts.length}</div>
-            <div>Highest concentration: {Math.max(...receptorImpacts.map(i => i.concentration)).toFixed(3)} mg/m³</div>
-            <div>Risk levels: {
-              Object.entries(
-                receptorImpacts.reduce((acc, impact) => {
-                  acc[impact.risk_level] = (acc[impact.risk_level] || 0) + 1;
-                  return acc;
-                }, {})
-              ).map(([level, count]) => `${level}: ${count}`).join(', ')
-            }</div>
-          </div>
+          <h5>Impact Summary</h5>
+          <p style={{ margin: '0.25rem 0', fontSize: '0.8rem' }}>
+            <strong>Receptors Affected:</strong> {receptorImpacts.length}
+          </p>
+          <p style={{ margin: '0.25rem 0', fontSize: '0.8rem' }}>
+            <strong>Max Concentration:</strong> {Math.max(...receptorImpacts.map(i => i.concentration)).toFixed(3)} mg/m³
+          </p>
+          <p style={{ margin: '0.25rem 0', fontSize: '0.8rem' }}>
+            <strong>High Risk Receptors:</strong> {receptorImpacts.filter(i => i.risk_level === 'high' || i.risk_level === 'extreme').length}
+          </p>
         </div>
       )}
     </div>
